@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLPI Correios Plugin Demo - Consulta CEP com API ViaCEP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input[readonly] {
+            background-color: #f0f0f0;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GLPI Correios Plugin Demo - Consulta CEP com API ViaCEP</h1>
+        <form id="cepForm">
+            <label for="cep">CEP:</label>
+            <input type="text" id="cep" name="cep" maxlength="8" placeholder="Digite o CEP" required>
+
+            <label for="address">Endereço:</label>
+            <input type="text" id="address" name="address" readonly>
+
+            <label for="neighborhood">Bairro:</label>
+            <input type="text" id="neighborhood" name="neighborhood" readonly>
+
+            <label for="city">Cidade:</label>
+            <input type="text" id="city" name="city" readonly>
+
+            <label for="state">Estado:</label>
+            <input type="text" id="state" name="state" readonly>
+
+            <span id="errorMessage" class="error"></span>
+        </form>
+        <div class="feedback">
+            <p>Encontrou algum problema ou tem sugestões? <a href="https://github.com/TamanduaTI/glpi-correios/issues" target="_blank">Envie seu feedback pelo GitHub Issues</a>.<br>
+            Para utilizar o plugin acesse no <a href="https://github.com/TamanduaTI/glpi-correios/" target="_blank">GitHub glpi-correios</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const cepInput = document.getElementById("cep");
+            const addressInput = document.getElementById("address");
+            const neighborhoodInput = document.getElementById("neighborhood");
+            const cityInput = document.getElementById("city");
+            const stateInput = document.getElementById("state");
+            const errorMessage = document.getElementById("errorMessage");
+
+            cepInput.addEventListener("blur", function() {
+                const cep = cepInput.value.trim().replace(/[^0-9]/g, "");
+
+                if (cep.length === 8) {
+                    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error("Erro ao consultar o CEP");
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.erro) {
+                                throw new Error("CEP não encontrado");
+                            }
+
+                            addressInput.value = data.logradouro || "";
+                            neighborhoodInput.value = data.bairro || "";
+                            cityInput.value = data.localidade || "";
+                            stateInput.value = data.uf || "";
+                            errorMessage.textContent = "";
+                        })
+                        .catch(error => {
+                            errorMessage.textContent = error.message;
+                            addressInput.value = "";
+                            neighborhoodInput.value = "";
+                            cityInput.value = "";
+                            stateInput.value = "";
+                        });
+                } else {
+                    errorMessage.textContent = "Por favor, insira um CEP válido.";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
